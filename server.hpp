@@ -13,6 +13,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <thread>
 
 struct HTTP_REQUEST{
   std::string http_method;
@@ -42,5 +43,6 @@ struct HTTP_RESPONSE{
 std::string create_http_response(const HTTP_RESPONSE& response);
 HTTP_REQUEST parse_request(const std::string& request);
 HTTP_RESPONSE parse_response(const HTTP_REQUEST& parsed_request);
+void handle_client(int client_fd);
 
 #endif

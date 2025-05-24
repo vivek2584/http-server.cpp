@@ -83,3 +83,23 @@ HTTP_RESPONSE parse_response(const HTTP_REQUEST& parsed_request){
 
   return parsed_response;
 }
+
+void handle_client(int client_fd){
+  char recvbuffer[2048];
+  ssize_t bytes_recvd = recv(client_fd, recvbuffer, sizeof(recvbuffer) - 1, 0);
+
+  if(bytes_recvd > 0){
+    recvbuffer[bytes_recvd] = '\0';
+  }
+
+  std::string request(recvbuffer);
+
+  HTTP_REQUEST parsed_request = parse_request(request);
+
+  HTTP_RESPONSE parsed_response = parse_response(parsed_request);
+
+  std::string sent_response = create_http_response(parsed_response);
+  //std::cout << sent_response << "\n";
+  send(client_fd, sent_response.c_str(), sent_response.size(), 0);
+  close(client_fd);
+}
