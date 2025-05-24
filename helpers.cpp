@@ -61,6 +61,13 @@ HTTP_RESPONSE parse_response(const HTTP_REQUEST& parsed_request){
     parsed_response.headers.insert({"Content-Length", std::to_string(response_body.size())});
     parsed_response.response_body = response_body;
   }
+  else if(parsed_request.request_target == "/user-agent"){
+    parsed_response.status_code = 200;
+    parsed_response.reason_phrase = "OK";
+    parsed_response.headers.insert({"Content-Type", "text/plain"});
+    parsed_response.headers.insert({"Content-Length", std::to_string((parsed_request.headers.find("User-Agent") -> second).size())});
+    parsed_response.response_body = parsed_request.headers.find("User-Agent") -> second;
+  }
   else if(parsed_request.request_target == "/"){
     parsed_response.status_code = 200;
     parsed_response.reason_phrase = "OK";
