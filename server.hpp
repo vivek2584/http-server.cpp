@@ -4,14 +4,22 @@
 #include <cstdlib>
 #include <string>
 #include <cstring>
+#include <sstream>
 #include <array>
+#include <vector>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netdb.h>
 
-constexpr const char* CRLF = "\r\n";
+struct HTTP_REQUEST{
+  std::string http_method;
+  std::string request_target;
+  std::string http_version;
+  std::vector<std::string> headers;
+  std::string request_body;
+};
 
 struct HTTP_RESPONSE{
   std::string http_version;
@@ -19,8 +27,18 @@ struct HTTP_RESPONSE{
   std::string reason_phrase;
   std::string headers;
   std::string response_body;
+
+  HTTP_RESPONSE() : http_version(""), status_code(0),
+                    reason_phrase(""), headers(""), response_body(""){}
+
+  HTTP_RESPONSE(const std::string& http_version, int status_code, const std::string& reason_phrase, 
+                const std::string& headers, const std::string& response_body) : 
+                http_version(http_version), status_code(status_code), 
+                reason_phrase(reason_phrase), headers(headers), response_body(response_body){}
 };
 
-std::string get_http_response(const HTTP_RESPONSE& response);
+
+std::string http_response(const HTTP_RESPONSE& response);
+HTTP_REQUEST parse_request(const std::string& request);
 
 #endif

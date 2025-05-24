@@ -47,14 +47,27 @@ int main(int argc, char **argv) {
   //
   int client = accept(server_fd, reinterpret_cast<sockaddr*>(&client_addr), &client_addr_len);
 
-  HTTP_RESPONSE response;
-  response.http_version = "HTTP/1.1";
-  response.status_code = 200;
-  response.reason_phrase = "OK";
-  response.headers = "";
-  response.response_body = "";
+  char recvbuffer[2048];
+  ssize_t bytes_recvd = recv(client, recvbuffer, sizeof(recvbuffer) - 1, 0);
 
-  std::string sent_response = get_http_response(response);
+  if(bytes_recvd > 0){
+    recvbuffer[bytes_recvd] = '\0';
+  }
+
+  std::string request(recvbuffer);
+
+  HTTP_REQUEST parsed_request = parse_request(request);
+  HTTP_RESPONSE response;
+  
+  if(parsed_request.request_target[0] == '/'){
+    response = HTTP_RESPONSE("HTTP/1.1", 200, "OK", "", "");
+  }
+  else{
+    response = HTTP_RESPONSE("HTTP/1.1", 404, "Not Found", "", "");
+  }
+
+  std::string sent_response = http_response(response);
+  //std::cout << sent_response << "\n";
   send(client, sent_response.c_str(), sent_response.size(), 0);
   std::cout << "Client connected\n";
   //
@@ -63,10 +76,45 @@ int main(int argc, char **argv) {
   return 0;
 }
 
-std::string get_http_response(const HTTP_RESPONSE& response){
+std::string http_response(const HTTP_RESPONSE& response){
   return  response.http_version + " " 
         + std::to_string(response.status_code) + " "
-        + response.reason_phrase + CRLF
-        + response.headers + CRLF
+        + response.reason_phrase + "\r\n"
+        + response.headers + "\r\n"
         + response.response_body;
+}
+
+HTTP_REQUEST parse_request(const std::string& request){
+  HTTP_REQUEST parsed_request;
+  size_t start = 0;
+  size_t end;
+
+  end = request.find("\r\n", start);
+  std::string request_line = request.substr(start, end - start);
+  start = end + 2;
+
+  std::istringstream stream(request_line);
+  std::string text;
+  std::array<std::string, 3> requestline;
+  int count = 0;
+  while(stream >> text){
+    requestline[count] = text;
+    count++;
+  }
+  parsed_request.http_method = requestline[0];
+  parsed_request.request_target = requestline[1];
+  parsed_request.http_version = requestline[2];
+
+  while((end = request.find("\r\n", start)) != std::string::npos){
+    if(end == start){
+      start = end + 2;
+      break;
+    }
+    parsed_request.headers.push_back(request.substr(start, end - start));
+    start = end + 2;
+  }
+
+  parsed_request.request_body = request.substr(start);
+
+  return parsed_request;
 }
