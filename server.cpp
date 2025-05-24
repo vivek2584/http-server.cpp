@@ -47,9 +47,26 @@ int main(int argc, char **argv) {
   //
   int client = accept(server_fd, reinterpret_cast<sockaddr*>(&client_addr), &client_addr_len);
 
+  HTTP_RESPONSE response;
+  response.http_version = "HTTP/1.1";
+  response.status_code = 200;
+  response.reason_phrase = "OK";
+  response.headers = "";
+  response.response_body = "";
+
+  std::string sent_response = get_http_response(response);
+  send(client, sent_response.c_str(), sent_response.size(), 0);
   std::cout << "Client connected\n";
   //
   close(server_fd);
 
   return 0;
+}
+
+std::string get_http_response(const HTTP_RESPONSE& response){
+  return  response.http_version + " " 
+        + std::to_string(response.status_code) + " "
+        + response.reason_phrase + CRLF
+        + response.headers + CRLF
+        + response.response_body;
 }
