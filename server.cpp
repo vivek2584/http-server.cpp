@@ -57,16 +57,17 @@ int main(int argc, char **argv) {
   std::string request(recvbuffer);
 
   HTTP_REQUEST parsed_request = parse_request(request);
-  HTTP_RESPONSE response;
+
+  HTTP_RESPONSE parsed_response = parse_response(parsed_request);
   
-  if(parsed_request.request_target[0] == '/'){
+  /* if(parsed_request.request_target.size() == 1 && parsed_request.request_target[0] == '/'){
     response = HTTP_RESPONSE("HTTP/1.1", 200, "OK", "", "");
   }
   else{
     response = HTTP_RESPONSE("HTTP/1.1", 404, "Not Found", "", "");
-  }
+  } */
 
-  std::string sent_response = http_response(response);
+  std::string sent_response = create_http_response(parsed_response);
   //std::cout << sent_response << "\n";
   send(client, sent_response.c_str(), sent_response.size(), 0);
   std::cout << "Client connected\n";
@@ -74,47 +75,4 @@ int main(int argc, char **argv) {
   close(server_fd);
 
   return 0;
-}
-
-std::string http_response(const HTTP_RESPONSE& response){
-  return  response.http_version + " " 
-        + std::to_string(response.status_code) + " "
-        + response.reason_phrase + "\r\n"
-        + response.headers + "\r\n"
-        + response.response_body;
-}
-
-HTTP_REQUEST parse_request(const std::string& request){
-  HTTP_REQUEST parsed_request;
-  size_t start = 0;
-  size_t end;
-
-  end = request.find("\r\n", start);
-  std::string request_line = request.substr(start, end - start);
-  start = end + 2;
-
-  std::istringstream stream(request_line);
-  std::string text;
-  std::array<std::string, 3> requestline;
-  int count = 0;
-  while(stream >> text){
-    requestline[count] = text;
-    count++;
-  }
-  parsed_request.http_method = requestline[0];
-  parsed_request.request_target = requestline[1];
-  parsed_request.http_version = requestline[2];
-
-  while((end = request.find("\r\n", start)) != std::string::npos){
-    if(end == start){
-      start = end + 2;
-      break;
-    }
-    parsed_request.headers.push_back(request.substr(start, end - start));
-    start = end + 2;
-  }
-
-  parsed_request.request_body = request.substr(start);
-
-  return parsed_request;
 }
