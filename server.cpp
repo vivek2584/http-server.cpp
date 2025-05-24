@@ -3,8 +3,6 @@
 int main(int argc, char **argv) {
   std::cout << std::unitbuf;
   std::cerr << std::unitbuf;
-  
-  std::cout << "Logs from your program will appear here!\n";
 
   int server_fd = socket(AF_INET, SOCK_STREAM, 0);
   if (server_fd < 0) {
@@ -33,6 +31,8 @@ int main(int argc, char **argv) {
     std::cerr << "listen failed\n";
     return 1;
   }
+
+  std::cout << "server listening at port 4221\n";
   
   while(true){
     struct sockaddr_in client_addr;

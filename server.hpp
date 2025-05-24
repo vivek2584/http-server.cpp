@@ -14,6 +14,8 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <thread>
+#include <filesystem>
+#include <fstream>
 
 struct HTTP_REQUEST{
   std::string http_method;
