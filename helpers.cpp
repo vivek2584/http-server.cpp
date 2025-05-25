@@ -114,7 +114,6 @@ HTTP_RESPONSE parse_response(const HTTP_REQUEST& parsed_request){
       std::ofstream file(file_path);
       std::istringstream ss(parsed_request.request_body);
       file << ss.rdbuf();
-      std::string file_content = ss.str();
       parsed_response.status_code = 201;
       parsed_response.reason_phrase = "Created";
     }
