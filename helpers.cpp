@@ -51,53 +51,79 @@ HTTP_RESPONSE parse_response(const HTTP_REQUEST& parsed_request){
   HTTP_RESPONSE parsed_response;
   parsed_response.http_version = "HTTP/1.1";
   
-  if(parsed_request.request_target.find("/echo/") == 0)
-  {
-    parsed_response.status_code = 200;
-    parsed_response.reason_phrase = "OK";
-    parsed_response.headers.insert({"Content-Type", "text/plain"});
-    std::string response_body = parsed_request.request_target.substr(6);
-    parsed_response.headers.insert({"Content-Length", std::to_string(response_body.size())});
-    parsed_response.response_body = response_body;
-  }
-  else if(parsed_request.request_target == "/user-agent"){
-    parsed_response.status_code = 200;
-    parsed_response.reason_phrase = "OK";
-    parsed_response.headers.insert({"Content-Type", "text/plain"});
-    parsed_response.headers.insert({"Content-Length", std::to_string((parsed_request.headers.find("User-Agent") -> second).size())});
-    parsed_response.response_body = parsed_request.headers.find("User-Agent") -> second;
-  }
-  else if(parsed_request.request_target.find("/files/") == 0){
-    std::string file_path = "tmp/" + parsed_request.request_target.substr(7);
-    if(!(std::filesystem::exists(file_path))){
+  if(parsed_request.http_method == "GET"){
+    if(parsed_request.request_target.find("/echo/") == 0)
+    {
+      parsed_response.status_code = 200;
+      parsed_response.reason_phrase = "OK";
+      parsed_response.headers.insert({"Content-Type", "text/plain"});
+      std::string response_body = parsed_request.request_target.substr(6);
+      parsed_response.headers.insert({"Content-Length", std::to_string(response_body.size())});
+      parsed_response.response_body = response_body;
+    }
+    else if(parsed_request.request_target == "/user-agent"){
+      parsed_response.status_code = 200;
+      parsed_response.reason_phrase = "OK";
+      parsed_response.headers.insert({"Content-Type", "text/plain"});
+      parsed_response.headers.insert({"Content-Length", std::to_string((parsed_request.headers.find("User-Agent") -> second).size())});
+      parsed_response.response_body = parsed_request.headers.find("User-Agent") -> second;
+    }
+    else if(parsed_request.request_target.find("/files/") == 0){
+      std::filesystem::path dir_path("tmp/");
+      std::filesystem::path file_path = dir_path / parsed_request.request_target.substr(7);
+
+      if (!std::filesystem::exists(file_path)) {
+        parsed_response.status_code = 404;
+        parsed_response.reason_phrase = "Not Found";
+        parsed_response.headers = {};
+        parsed_response.response_body = ""; 
+      }
+      else{
+        std::ifstream file(file_path);
+        std::ostringstream ss;
+        ss << file.rdbuf();
+        std::string file_content = ss.str();
+        parsed_response.status_code = 200;
+        parsed_response.reason_phrase = "OK";
+        parsed_response.headers.insert({"Content-Type", "application/octet-stream"});
+        parsed_response.headers.insert({"Content-Length", std::to_string(file_content.size())});
+        parsed_response.response_body = file_content;
+      }
+    }
+    else if(parsed_request.request_target == "/"){
+      parsed_response.status_code = 200;
+      parsed_response.reason_phrase = "OK";
+      parsed_response.headers = {};
+      parsed_response.response_body = "";
+    }
+    else{
       parsed_response.status_code = 404;
       parsed_response.reason_phrase = "Not Found";
       parsed_response.headers = {};
       parsed_response.response_body = "";
     }
-    else{
-      std::ifstream file(file_path);
-      std::ostringstream ss;
-      ss << file.rdbuf();
-      std::string file_content = ss.str();
-      parsed_response.status_code = 200;
-      parsed_response.reason_phrase = "OK";
-      parsed_response.headers.insert({"Content-Type", "application/octet-stream"});
-      parsed_response.headers.insert({"Content-Length", std::to_string(file_content.size())});
-      parsed_response.response_body = file_content;
+  }
+  else if(parsed_request.http_method == "POST"){
+    std::filesystem::path dir_path("tmp/");
+    std::filesystem::path file_path = dir_path / parsed_request.request_target.substr(7);
+
+    if(!std::filesystem::exists(dir_path)){
+      std::filesystem::create_directories(dir_path);
     }
-  }
-  else if(parsed_request.request_target == "/"){
-    parsed_response.status_code = 200;
-    parsed_response.reason_phrase = "OK";
-    parsed_response.headers = {};
-    parsed_response.response_body = "";
-  }
-  else{
-    parsed_response.status_code = 404;
-    parsed_response.reason_phrase = "Not Found";
-    parsed_response.headers = {};
-    parsed_response.response_body = "";
+    if (!std::filesystem::exists(file_path)) {
+      std::ofstream file(file_path);
+      std::istringstream ss(parsed_request.request_body);
+      file << ss.rdbuf();
+      std::string file_content = ss.str();
+      parsed_response.status_code = 201;
+      parsed_response.reason_phrase = "Created";
+    }
+    else{
+      parsed_response.status_code = 404;
+      parsed_response.reason_phrase = "File Already Exists!";
+      parsed_response.headers = {};
+      parsed_response.response_body = "";
+    }
   }
 
   return parsed_response;
