@@ -3,7 +3,7 @@
 * responds to basic GET and POST requests  
 * all clients run on separate detached threads
 * no external libraries used  
-* runs on port 4221, currently only locally
+* runs on port 4221
 
 ## how to build :-  
 ```zsh
@@ -19,7 +19,7 @@ g++ helpers.cpp server.cpp -o server
 ```zsh
 ⚡ curl -i http://localhost:4221/files/foo
 HTTP/1.1 200 OK
-Content-Length: 34
+Content-Length: 15
 Content-Type: application/octet-stream
 
 HI IAM FOO!!!!!
